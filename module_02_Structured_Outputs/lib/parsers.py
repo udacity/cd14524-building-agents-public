@@ -1,7 +1,7 @@
 import json
-from typing import Any, Type
+from typing import Any, Type ,List
 from abc import ABC, abstractmethod
-from pydantic import BaseModel
+from pydantic import BaseModel ,Field
 
 from lib.messages import AIMessage
 
@@ -10,6 +10,12 @@ class OutputParser(BaseModel, ABC):
     @abstractmethod
     def parse(self, ai_message: AIMessage) -> Any:
         pass
+
+class ActionItem(BaseModel):
+    task: str = Field(..., description="Task description")
+    assignee: str = Field(..., description="Person responsible for the task")
+    due_date: str = Field(..., description="Due date for the task")
+
 
 
 class StrOutputParser(OutputParser):
@@ -36,4 +42,10 @@ class PydanticOutputParser(OutputParser):
 
     def parse(self, ai_message: AIMessage) -> BaseModel:
         return self.model_class.model_validate_json(ai_message.content)
-    
+
+class MeetingSummary(BaseModel):
+    title: str
+    date: str
+    participants: List[str]
+    key_points: List[str]
+    action_items: List[ActionItem]    
