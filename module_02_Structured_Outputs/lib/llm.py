@@ -16,7 +16,7 @@ class LLM:
         model: str = "gpt-4o-mini",
         temperature: float = 0.0,
         tools: Optional[List[Tool]] = None,
-        api_key: Optional[str] = None
+        api_key: Optional[str] = "voc-37530322316886551795186a355f97854fa7.94470412"
     ):
         self.model = model
         self.temperature = temperature

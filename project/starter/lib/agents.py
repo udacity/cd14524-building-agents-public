@@ -14,6 +14,7 @@ class AgentState(TypedDict):
     messages: List[dict]  # List of conversation messages
     current_tool_calls: Optional[List[ToolCall]]  # Current pending tool calls
     total_tokens: int  # Track the cumulative total
+    session_id:str
     
 class Agent:
     def __init__(self, 
@@ -51,8 +52,8 @@ class Agent:
         messages.append(UserMessage(content=state["user_query"]))
         
         return {
+            **state,
             "messages": messages,
-            "session_id": state["session_id"]
         }
 
     def _llm_step(self, state: AgentState) -> AgentState:
@@ -68,7 +69,7 @@ class Agent:
         tool_calls = response.tool_calls if response.tool_calls else None
 
         current_total = state.get("total_tokens", 0)
-        if response.token_usage:
+        if getattr(response, "token_usage", None):
             current_total += response.token_usage.total_tokens
 
         # Create AI message with content and tool calls
@@ -78,15 +79,15 @@ class Agent:
         )
 
         return {
+            **state,
             "messages": state["messages"] + [ai_message],
             "current_tool_calls": tool_calls,
-            "session_id": state["session_id"],
             "total_tokens": current_total,
         }
 
-    def _tool_step(self, state: AgentState) -> AgentState:
+    def _tool_step(self, state: AgentState) -> dict:
         """Step logic: Execute any pending tool calls"""
-        tool_calls = state["current_tool_calls"] or []
+        tool_calls = state.get("current_tool_calls") or []
         tool_messages = []
         
         for call in tool_calls:
@@ -99,7 +100,7 @@ class Agent:
             if tool:
                 result = str(tool(**function_args))
                 tool_message = ToolMessage(
-                    content=json.dumps(result), 
+                    content=result, 
                     tool_call_id=tool_call_id, 
                     name=function_name, 
                 )
@@ -107,9 +108,9 @@ class Agent:
         
         # Clear tool calls and add results to messages
         return {
+            **state,
             "messages": state["messages"] + tool_messages,
             "current_tool_calls": None,
-            "session_id": state["session_id"]
         }
 
     def _create_state_machine(self) -> StateMachine[AgentState]:
@@ -117,11 +118,11 @@ class Agent:
         machine = StateMachine[AgentState](AgentState)
         
         # Create steps
-        entry = EntryPoint[AgentState]()
-        message_prep = Step[AgentState]("message_prep", self._prepare_messages_step)
-        llm_processor = Step[AgentState]("llm_processor", self._llm_step)
-        tool_executor = Step[AgentState]("tool_executor", self._tool_step)
-        termination = Termination[AgentState]()
+        entry = EntryPoint()
+        message_prep = Step("message_prep", self._prepare_messages_step)
+        llm_processor = Step("llm_processor", self._llm_step)
+        tool_executor = Step("tool_executor", self._tool_step)
+        termination = Termination()
         
         machine.add_steps([entry, message_prep, llm_processor, tool_executor, termination])
         
@@ -136,7 +137,7 @@ class Agent:
                 return tool_executor
             return termination
         
-        machine.connect(llm_processor, [tool_executor, termination], check_tool_calls)
+        machine.connect(llm_processor, [tool_executor, termination, check_tool_calls], check_tool_calls)
         machine.connect(tool_executor, llm_processor)  # Go back to llm after tool execution
         
         return machine
@@ -163,13 +164,14 @@ class Agent:
         if last_run:
             last_state = last_run.get_final_state()
             if last_state:
-                previous_messages = last_state["messages"]
+                previous_messages = last_state.get("messages", [])
 
         initial_state: AgentState = {
             "user_query": query,
             "instructions": self.instructions,
             "messages": previous_messages,
             "current_tool_calls": None,
+            "total_tokens": 0,
             "session_id": session_id,
         }
 
@@ -189,6 +191,7 @@ class Agent:
         Returns:
             List of Run objects in the session
         """
+        session_id = session_id or "default"
         return self.memory.get_all_objects(session_id)
 
     def reset_session(self, session_id: Optional[str] = None):
@@ -197,4 +200,5 @@ class Agent:
         Args:
             session_id: Optional session to reset (uses "default" if None)
         """
+        session_id = session_id or "default"
         self.memory.reset(session_id)
