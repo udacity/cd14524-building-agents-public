@@ -1,0 +1,10 @@
+# UdaPlay project dependencies (the Udacity workspace already has these, on Python 3.13).
+# Local setup: Python 3.11+, then  pip install -r requirements.txt
+chromadb>=1.0.4
+openai>=1.73.0
+pydantic>=2.11.3
+python-dotenv>=1.1.0
+tavily-python>=0.5.4
+pdfplumber>=0.11.6
+# To run the notebooks locally you also need Jupyter, e.g.  pip install notebook
+# Udacity workspace only (Linux; no macOS wheels): pysqlite3-binary

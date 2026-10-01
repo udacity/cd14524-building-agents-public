@@ -38,19 +38,18 @@ Required Tools to Implement:
 ## Requirements
 
 ### Environment Setup
-Create a `.env` file with the following API keys:
+Create a `.env` file in `project/starter` (copy `.env.example` from the repo root) with:
 ```
-OPENAI_API_KEY="YOUR_KEY"
-CHROMA_OPENAI_API_KEY="YOUR_KEY"
-TAVILY_API_KEY="YOUR_KEY"
+OPENAI_API_KEY="voc-..."          # the voc- key from the classroom's Cloud Resources panel
+OPENAI_BASE_URL="https://openai.vocareum.com/v1"
+TAVILY_API_KEY="tvly-..."
 ```
+The file must be named exactly `.env`.
 
 ### Project Dependencies
-- Python 3.11+
-- ChromaDB
-- OpenAI
-- Tavily
-- dotenv
+- Python 3.11+ (the Udacity workspace runs 3.13)
+- `pip install -r requirements.txt` installs ChromaDB, OpenAI, Pydantic, python-dotenv, Tavily and pdfplumber
+- The `pysqlite3` cell at the top of each notebook is only for the Udacity workspace; locally it does nothing
 
 ### Directory Structure
 ```
@@ -69,11 +68,11 @@ project/
 ## Getting Started
 
 1. Create and activate a virtual environment
-2. Install required dependencies
-3. Set up your `.env` file with necessary API keys
-4. Follow the notebooks in order:
-   - Complete Part 1 to set up your vector database
-   - Complete Part 2 to implement the AI agent
+2. `pip install -r requirements.txt`
+3. Set up your `.env` file in `project/starter`
+4. Run both notebooks from `project/starter`, in order:
+   - Part 1 builds the vector database in `chromadb/` with a collection named `udaplay`
+   - Part 2 loads that same path and collection, so keep both names and the embedding function unchanged, and don't delete `chromadb/`
 
 ## Testing Your Implementation
 
@@ -82,10 +81,10 @@ After completing both parts, test your agent with questions like:
 - "Which one was the first 3D platformer Mario game?"
 - "Was Mortal Kombat X released for PlayStation 5?"
 
-## Advanced Features
+## Advanced Features (Stand Out, optional)
 
 After completing the basic implementation, you can enhance your agent with:
-- Long-term memory capabilities
+- Long-term memory that persists across sessions (note: `lib/memory.py`'s `LongTermMemory` is in-memory unless you give it a persistent ChromaDB client)
 - Additional tools and capabilities
 
 ## Notes
