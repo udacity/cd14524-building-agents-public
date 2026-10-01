@@ -154,8 +154,11 @@ class VectorStoreManager:
     - Store lifecycle management (create, get, delete)
     """
 
-    def __init__(self, openai_api_key: str):
-        self.chroma_client = chromadb.Client()
+    def __init__(self, openai_api_key: str, persist_path: Optional[str] = None):
+        # In-memory by default; pass persist_path to keep stores on disk between sessions.
+        self.chroma_client = (
+            chromadb.PersistentClient(path=persist_path) if persist_path else chromadb.Client()
+        )
         self.embedding_function = self._create_embedding_function(openai_api_key)
 
     def _create_embedding_function(self, api_key: str) -> EmbeddingFunction:

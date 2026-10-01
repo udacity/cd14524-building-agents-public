@@ -222,8 +222,13 @@ class LongTermMemory:
     - Time-based filtering
     - Semantic similarity search
     """
-    def __init__(self, db:VectorStoreManager):
-        self.vector_store = db.create_store("long_term_memory", force=True)
+    def __init__(self, db: VectorStoreManager, reset: bool = False):
+        # reset=True starts from an empty memory. By default, what an earlier session stored is kept
+        # (only possible when db was created with persist_path).
+        self.vector_store = (
+            db.create_store("long_term_memory", force=True) if reset
+            else db.get_or_create_store("long_term_memory")
+        )
 
     def get_namespaces(self) -> List[str]:
         """
